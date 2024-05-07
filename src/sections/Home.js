@@ -18,7 +18,7 @@ export default function Home() {
         <GettingStarted />
         <div className="gradient-02 z-0" />
         <div className="gradient-04 z-0" />
-        <Footer />
+        {/*<Footer />*/}
       </div>
     </>
   );
