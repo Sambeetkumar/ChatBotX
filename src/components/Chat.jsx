@@ -1,15 +1,19 @@
 import { useState } from "react";
-import axios from "axios";
 import TypingAnimation from "./TypingAnimation";
+import { GoogleGenAI } from "@google/genai";
 export default function Chat() {
   const [inputValue, setInputValue] = useState("");
-  const [chatLog, setChatLog] = useState([{
-    type: "user",
-    message: "Hello!",},
+  const ai = new GoogleGenAI({ apiKey: process.env.REACT_APP_GEMINI_APIKEY });
+  const [chatLog, setChatLog] = useState([
+    {
+      type: "user",
+      message: "Hello!",
+    },
     {
       type: "bot",
       message: "Hi! I am ChatBotX. How can I assist you today ?",
-  },]);
+    },
+  ]);
   const [isLoading, setIsLoading] = useState(false);
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -24,33 +28,26 @@ export default function Chat() {
     setInputValue("");
   };
   const sendMessage = async (message) => {
-    const url = "https://api.openai.com/v1/chat/completions";
-    const headers = {
-      "Content-type": "application/json",
-      Authorization: `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
-    };
-    const data = {
-      model: "gpt-3.5-turbo-0301",
-      messages: [{ role: "user", content: message }],
-      max_tokens: 300,
-    };
 
     setIsLoading(true);
-
-    axios
-      .post(url, data, { headers: headers })
-      .then((response) => {
-        console.log(response);
-        setChatLog((prevChatLog) => [
-          ...prevChatLog,
-          { type: "bot", message: response.data.choices[0].message.content },
-        ]);
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        setIsLoading(false);
-        console.log(error);
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: message,
+        generationConfig: {
+          maxOutputTokens: 750,
+          temperature: 0.5, // Use the maxTokens variable from your input
+        },
       });
+      console.log(response.text);
+      setChatLog((prevChatLog) => [
+        ...prevChatLog,
+        { type: "bot", message: response.text },
+      ]);
+      setIsLoading(false);
+    } catch (e) {
+      console.log(e);
+    }
   };
 
   return (
@@ -71,7 +68,9 @@ export default function Chat() {
               >
                 <div
                   className={`rounded-br-lg rounded-bl-lg ${
-                    message.type === "user" ? "bg-pink-600 rounded-tl-lg" : "dark:border dark:border-gray-700 bg-gray-800 rounded-tr-lg"
+                    message.type === "user"
+                      ? "bg-pink-600 rounded-tl-lg"
+                      : "dark:border dark:border-gray-700 bg-gray-800 rounded-tr-lg"
                   } p-4 text-white max-w-lg`}
                 >
                   {message.message}
